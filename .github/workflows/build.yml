@@ -2,7 +2,8 @@ name: Build and Push
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -11,9 +12,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -21,50 +23,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}:latest
-```
-
-## Step 3: Push 후 대기
-
-3개 파일을 커밋하고 push하면 GitHub Actions가 자동으로 빌드를 시작해. 저장소 **Actions** 탭에서 진행 상황 확인 가능. 빌드에 5~10분 걸려.
-
-## Step 4: 패키지 공개 설정
-
-빌드 완료 후 GitHub 프로필 → **Packages** → `hwp-converter` → **Package settings** → Visibility를 **Public**으로 변경
-
-## Step 5: 시놀로지 Container Manager에서 Pull
-
-Container Manager → **레지스트리** → 검색창에:
-```
-ghcr.io/<GitHub유저명>/hwp-converter
-```
-
-입력 → **다운로드** → 태그 `latest` 선택
-
-> 검색이 안 되면: Container Manager → **이미지** → **추가** → **URL에서 추가** → `ghcr.io/<GitHub유저명>/hwp-converter:latest` 입력
-
-## Step 6: 컨테이너 생성
-
-| 항목 | 값 |
-|---|---|
-| 이미지 | `ghcr.io/<유저명>/hwp-converter:latest` |
-| 컨테이너 이름 | `hwp-converter` |
-| 자동 재시작 | 체크 |
-| 메모리 제한 | 2048MB 이상 |
-
-포트:
-
-| 로컬 포트 | 컨테이너 포트 | 유형 |
-|---|---|---|
-| 8800 | 8800 | TCP |
-
-나머지 전부 기본값 → 완료
-
-## Step 7: 확인
-```
-http://<NAS_IP>:8800/health
-→ {"status":"ok"}
+        run: |
+          IMAGE_NAME=ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker build -t $IMAGE_NAME:latest .
+          docker push $IMAGE_NAME:latest
