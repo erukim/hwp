@@ -1,9 +1,9 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y wget gnupg software-properties-common default-jre libreoffice && \
+    apt-get install -y wget default-jre libreoffice && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN wget -O /tmp/H2Orestart.oxt \
@@ -12,7 +12,7 @@ RUN wget -O /tmp/H2Orestart.oxt \
     --accept="socket,host=0.0.0.0,port=2002;urp;" --nodefault --nologo & \
     sleep 10 && \
     unopkg add --shared /tmp/H2Orestart.oxt && \
-    pkill -f soffice
+    pkill -f soffice || true
 
 RUN apt-get update && \
     apt-get install -y fonts-nanum fonts-noto-cjk fonts-unfonts-core && \
